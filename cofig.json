@@ -1,0 +1,6 @@
+{
+    "app_name": "base-app",
+    "port": "3000",
+    "redis_url": "redis:6379",
+    "environment": "development"
+}
