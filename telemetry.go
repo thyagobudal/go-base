@@ -1,4 +1,4 @@
-package baseserver
+package server
 
 import (
 	"log"
