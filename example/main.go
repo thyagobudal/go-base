@@ -11,7 +11,7 @@ import (
 // @title Fiber Swagger Example API
 // @version 1.0
 // @description This is a sample server for a Fiber application.
-// @host localhost:8080
+// @host localhost:8081
 // @BasePath /
 func RegisterAppRoutes(app *fiber.App) {
 
