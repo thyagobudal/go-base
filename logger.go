@@ -1,14 +1,14 @@
-package server
+package baseserver
 
 import (
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
-type Logger struct {
-	*zap.Logger
+func NewLogger() (*zap.Logger, error) {
+	return zap.NewProduction()
 }
 
-func NewLogger() *Logger {
-	logger, _ := zap.NewProduction()
-	return &Logger{logger}
+func LoggerModule() fx.Option {
+	return fx.Provide(NewLogger)
 }
