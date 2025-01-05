@@ -1,89 +1,90 @@
 package main
 
 import (
-	"context"
-	"os"
-	"time"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
-	baseserver "github.com/thyagobudal/go-base"
-	"go.elastic.co/apm"
-	"go.elastic.co/apm/module/apmlogrus"
-	"go.uber.org/fx"
+	"github.com/thyagobudal/go-base/fiberfx"
+	"go.elastic.co/apm/v2"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-var tracer *apm.Tracer
+// healthFeature represents the health check functionality
+func healthFeature() *fiberfx.Module {
+	return &fiberfx.Module{
+		Routes: []func(app *fiber.App){
+			func(app *fiber.App) {
+				app.Get("/health", func(c *fiber.Ctx) error {
+					return c.JSON(fiber.Map{"status": "ok"})
+				})
+			},
+		},
+	}
+}
 
-// @title Fiber Swagger Example API
-// @version 1.0
-// @description This is a sample server for a Fiber application.
-// @host localhost:8081
-// @BasePath /
-func RegisterAppRoutes(app *fiber.App) {
-	app.Get("/api/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "healthy"})
+// errorSimulationFeature represents the error simulation functionality
+func errorSimulationFeature() *fiberfx.Module {
+	return &fiberfx.Module{
+		Routes: []func(app *fiber.App){
+			func(app *fiber.App) {
+				app.Get("/simulate-error", simulateErrorHandler)
+			},
+		},
+	}
+}
+
+// simulateErrorHandler handles the error simulation endpoint
+func simulateErrorHandler(c *fiber.Ctx) error {
+	// Obtém o logger do contexto da aplicação
+	logger := c.Locals(fiberfx.LoggerKey).(*zap.Logger)
+
+	// Registra trace no início da requisição
+	fiberfx.LogTrace(c.Context(), logger, "iniciando simulação de erro",
+		zap.String("path", c.Path()),
+		zap.String("method", c.Method()),
+	)
+
+	err := errors.New("erro simulado para teste do APM")
+
+	// Usa AddStacktrace do Zap
+	logger.WithOptions(zap.AddStacktrace(zapcore.ErrorLevel)).
+		Error("erro simulado",
+			zap.Error(err),
+			zap.String("path", c.Path()),
+			zap.String("method", c.Method()),
+		)
+
+	// Registra no APM
+	if e := apm.CaptureError(c.Context(), err); e != nil {
+		e.Send()
+	}
+
+	// Registra trace no fim da requisição
+	fiberfx.LogTrace(c.Context(), logger, "finalizando simulação de erro",
+		zap.String("error", err.Error()),
+	)
+
+	return c.Status(500).JSON(fiber.Map{
+		"error": err.Error(),
 	})
-
-	app.Get("/api/trace", func(c *fiber.Ctx) error {
-		tx := tracer.StartTransaction("handleRequest", "request")
-		defer tx.End()
-
-		ctx := apm.ContextWithTransaction(c.Context(), tx)
-		logrus.WithContext(ctx).Info("Handling /api/trace request")
-
-		result := functionA(ctx)
-		return c.JSON(fiber.Map{"result": result})
-	})
-}
-
-func functionA(ctx context.Context) string {
-	span, ctx := apm.StartSpan(ctx, "functionA", "custom")
-	defer span.End()
-
-	logrus.WithContext(ctx).Info("Executing functionA")
-	time.Sleep(1 * time.Second)
-
-	return functionB(ctx)
-}
-
-func functionB(ctx context.Context) string {
-	span, ctx := apm.StartSpan(ctx, "functionB", "sql")
-	defer span.End()
-
-	logrus.WithContext(ctx).Info("Executing functionB")
-	time.Sleep(1 * time.Second)
-
-	return functionC(ctx)
-}
-
-func functionC(ctx context.Context) string {
-	span, ctx := apm.StartSpan(ctx, "functionC", "custom")
-	defer span.End()
-	logrus.WithContext(ctx).Info("Executing functionC")
-	time.Sleep(500 * time.Millisecond)
-
-	return "Tracing complete"
-}
-
-func AppRoutesModule() fx.Option {
-	return fx.Invoke(RegisterAppRoutes)
 }
 
 func main() {
-	logrus.AddHook(&apmlogrus.Hook{})
-
-	tracer = apm.DefaultTracer
-
-	port := os.Getenv("APP_PORT")
-	if port == "" {
-		port = "8080"
+	cfg := fiberfx.Config{
+		Port:        "3000",
+		ServiceName: "MyAPI",
+		Environment: "development",
+		EnableAPM:   true,
 	}
 
-	app := baseserver.NewApp(
-		port,
-		AppRoutesModule(),
-	)
+	// Initialize features
+	features := []*fiberfx.Module{
+		healthFeature(),
+		errorSimulationFeature(),
+	}
 
+	// Start application with features
+	app := fiberfx.NewFxApp(cfg, features...)
 	app.Run()
 }
