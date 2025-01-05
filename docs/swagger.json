@@ -1,0 +1,72 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample API documentation",
+        "title": "API Documentation",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "API Support",
+            "email": "your-email@domain.com"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:3000",
+    "basePath": "/api",
+    "paths": {
+        "/api/health": {
+            "get": {
+                "description": "Verifica o status da API",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health Check",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/logged/hello": {
+            "get": {
+                "description": "Endpoint de exemplo que demonstra o uso de logging",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Logger"
+                ],
+                "summary": "Hello com logging",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/simulate-error": {
+            "get": {
+                "description": "Endpoint para simular um erro e testar o APM",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Error"
+                ],
+                "summary": "Simula um erro",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        }
+    }
+}

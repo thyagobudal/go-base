@@ -12,4 +12,4 @@ http://localhost:5601
 # Swagger
 
 ## Gerar docs 
-swag init
+swag init -g example/main.go -o docs --outputTypes json

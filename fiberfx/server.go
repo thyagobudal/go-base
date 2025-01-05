@@ -75,6 +75,8 @@ func NewServer(lc fx.Lifecycle, params ServerParams) *fiber.App {
 	// Registra o Elastic APM se habilitado
 	RegisterAPMMiddleware(app, params.Config.EnableAPM, params.Config.ServiceName)
 
+	RegisterSwagger(app)
+
 	// Register module-specific middlewares first
 	for _, module := range params.Modules {
 		for _, middleware := range module.Middlewares {

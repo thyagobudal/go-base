@@ -10,16 +10,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewErrorSimulationFeature() *fiberfx.Module {
-	return &fiberfx.Module{
-		Routes: []func(app *fiber.App){
-			func(app *fiber.App) {
-				app.Get("/simulate-error", simulateErrorHandler)
-			},
-		},
-	}
-}
-
+// @Summary Simula um erro
+// @Description Endpoint para simular um erro e testar o APM
+// @Tags Error
+// @Produce json
+// @Success 200
+// @Router /api/simulate-error [get]
 func simulateErrorHandler(c *fiber.Ctx) error {
 	logger := c.Locals(fiberfx.LoggerKey).(*zap.Logger)
 
@@ -48,4 +44,14 @@ func simulateErrorHandler(c *fiber.Ctx) error {
 	return c.Status(500).JSON(fiber.Map{
 		"error": err.Error(),
 	})
+}
+
+func NewErrorSimulationFeature() *fiberfx.Module {
+	return &fiberfx.Module{
+		Routes: []func(app *fiber.App){
+			func(app *fiber.App) {
+				app.Get("/simulate-error", simulateErrorHandler)
+			},
+		},
+	}
 }
